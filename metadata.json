@@ -1,0 +1,5 @@
+{
+  "name": "Soul Forge RPG",
+  "description": "A high-fidelity RPG race rolling simulator. Features a weighted RNG system based on specific rarity tiers, a statistical dashboard using Recharts, and an AI Forge powered by Gemini to generate unique custom races.",
+  "requestFramePermissions": []
+}
