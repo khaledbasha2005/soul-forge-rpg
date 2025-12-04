@@ -4,7 +4,7 @@ import { Race, Rarity, Mission, RARITY_POWER, Stats, Item, ItemType, CombatState
 import RaceCard from './components/RaceCard';
 import ItemCard from './components/ItemCard';
 import StatsChart from './components/StatsChart';
-import { Dices, History, BookOpen, KeyRound, Swords, Scroll, Gem, Trophy, Skull, User, Shield, Zap, Heart, Sparkles, Coins, ShoppingBag, ArrowRight, Bell, RefreshCw, Atom, Plus, X } from 'lucide-react';
+import { Dices, History, BookOpen, KeyRound, Swords, Scroll, Gem, Trophy, Skull, User, Shield, Zap, Heart, Sparkles, Coins, ShoppingBag, ArrowRight, Bell, RefreshCw, Atom, Plus, X, Menu, Flame } from 'lucide-react';
 
 const App: React.FC = () => {
   // Game State
@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const [rollHistory, setRollHistory] = useState<Race[]>([]);
   const [activeTab, setActiveTab] = useState<'forge' | 'adventure' | 'hero' | 'collection' | 'stats' | 'codes' | 'shop' | 'fusion'>('forge');
   const [notification, setNotification] = useState<{ title: string, message: string, rarity: Rarity } | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Adventure State
   const [activeMission, setActiveMission] = useState<string | null>(null);
@@ -67,7 +68,7 @@ const App: React.FC = () => {
   ];
 
   // Derived State
-  // Check if Fusion Core is equipped (by ID is safer, but name works for now based on previous context)
+  // Check if Fusion Core is equipped
   const isFusionCoreActive = equipment.accessory?.id?.includes('ac_fusion_core') || equipment.accessory?.name === 'Fusion Core';
 
   // --- STATS CALCULATION ---
@@ -106,9 +107,9 @@ const App: React.FC = () => {
     // Apply Primary Race (100% Effectiveness)
     applyRaceModifiers(equippedRace, 1.0);
 
-    // Apply Secondary Race (50% Effectiveness) if Fusion Core is active
+    // Apply Secondary Race (100% Effectiveness if Fusion Core equipped)
     if (isFusionCoreActive && secondaryRace) {
-      applyRaceModifiers(secondaryRace, 0.5);
+      applyRaceModifiers(secondaryRace, 1.0);
     }
 
     // 4. Rebirth Multiplier (+25% all stats per rebirth)
@@ -1027,11 +1028,19 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row max-w-7xl mx-auto overflow-hidden shadow-2xl border-x border-slate-800 relative">
+    <div className="h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-hidden shadow-2xl border-x border-slate-800 relative">
       
+      {/* Mobile Menu Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Notifications Overlay */}
       {notification && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-lg px-4 animate-in slide-in-from-top duration-500">
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[60] w-[90%] md:w-full max-w-lg px-4 animate-in slide-in-from-top duration-500">
           <div className={`
             p-6 rounded-xl border-2 shadow-2xl flex items-center gap-4 relative overflow-hidden backdrop-blur-xl
             ${notification.rarity === Rarity.MYTHICAL ? 'bg-rose-950/90 border-rose-500 shadow-rose-500/50' : 
@@ -1055,10 +1064,30 @@ const App: React.FC = () => {
       )}
 
       {/* Sidebar Navigation */}
-      <nav className="md:w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4">
-        <h1 className="text-3xl font-bold text-center fantasy-font text-amber-500 mb-2 drop-shadow-md">
-          Soul Forge
-        </h1>
+      <nav className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:relative md:translate-x-0
+      `}>
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex items-center gap-3">
+             <img 
+               src="https://images.unsplash.com/photo-1542259681-d262d9699666?q=80&w=200&auto=format&fit=crop" 
+               alt="Soul Forge" 
+               className="w-10 h-10 rounded-full border-2 border-amber-500 object-cover shadow-amber-500/50 shadow-md"
+             />
+             <h1 className="text-2xl font-bold fantasy-font text-amber-500 drop-shadow-md">
+               Soul Forge
+             </h1>
+          </div>
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="md:hidden text-slate-400 hover:text-white"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
         
         {/* Currency & Level Display */}
         <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2 shadow-inner">
@@ -1094,37 +1123,39 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <button onClick={() => setActiveTab('forge')} className={`nav-btn ${activeTab === 'forge' ? 'active-nav' : ''}`}>
-          <Dices className="w-5 h-5" /> The Forge
-        </button>
-        
-        <button onClick={() => setActiveTab('fusion')} className={`nav-btn ${activeTab === 'fusion' ? 'active-nav' : ''}`}>
-          <Atom className="w-5 h-5" /> Fusion Reactor
-        </button>
+        <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1">
+          <button onClick={() => { setActiveTab('forge'); setIsMobileMenuOpen(false); }} className={`nav-btn ${activeTab === 'forge' ? 'active-nav' : ''}`}>
+            <Dices className="w-5 h-5" /> The Forge
+          </button>
+          
+          <button onClick={() => { setActiveTab('fusion'); setIsMobileMenuOpen(false); }} className={`nav-btn ${activeTab === 'fusion' ? 'active-nav' : ''}`}>
+            <Atom className="w-5 h-5" /> Fusion Reactor
+          </button>
 
-        <button onClick={() => setActiveTab('hero')} className={`nav-btn ${activeTab === 'hero' ? 'active-nav' : ''}`}>
-          <User className="w-5 h-5" /> Hero Status
-        </button>
+          <button onClick={() => { setActiveTab('hero'); setIsMobileMenuOpen(false); }} className={`nav-btn ${activeTab === 'hero' ? 'active-nav' : ''}`}>
+            <User className="w-5 h-5" /> Hero Status
+          </button>
 
-        <button onClick={() => setActiveTab('shop')} className={`nav-btn ${activeTab === 'shop' ? 'active-nav' : ''}`}>
-          <ShoppingBag className="w-5 h-5" /> Item Shop
-        </button>
+          <button onClick={() => { setActiveTab('shop'); setIsMobileMenuOpen(false); }} className={`nav-btn ${activeTab === 'shop' ? 'active-nav' : ''}`}>
+            <ShoppingBag className="w-5 h-5" /> Item Shop
+          </button>
 
-        <button onClick={() => setActiveTab('adventure')} className={`nav-btn ${activeTab === 'adventure' ? 'active-nav' : ''}`}>
-          <Swords className="w-5 h-5" /> Adventure
-        </button>
+          <button onClick={() => { setActiveTab('adventure'); setIsMobileMenuOpen(false); }} className={`nav-btn ${activeTab === 'adventure' ? 'active-nav' : ''}`}>
+            <Swords className="w-5 h-5" /> Adventure
+          </button>
 
-        <button onClick={() => setActiveTab('collection')} className={`nav-btn ${activeTab === 'collection' ? 'active-nav' : ''}`}>
-          <BookOpen className="w-5 h-5" /> Collection
-        </button>
+          <button onClick={() => { setActiveTab('collection'); setIsMobileMenuOpen(false); }} className={`nav-btn ${activeTab === 'collection' ? 'active-nav' : ''}`}>
+            <BookOpen className="w-5 h-5" /> Collection
+          </button>
 
-        <button onClick={() => setActiveTab('codes')} className={`nav-btn ${activeTab === 'codes' ? 'active-nav' : ''}`}>
-          <KeyRound className="w-5 h-5" /> Redeem Codes
-        </button>
-        
-        <button onClick={() => setActiveTab('stats')} className={`nav-btn ${activeTab === 'stats' ? 'active-nav' : ''}`}>
-          <History className="w-5 h-5" /> Statistics
-        </button>
+          <button onClick={() => { setActiveTab('codes'); setIsMobileMenuOpen(false); }} className={`nav-btn ${activeTab === 'codes' ? 'active-nav' : ''}`}>
+            <KeyRound className="w-5 h-5" /> Redeem Codes
+          </button>
+          
+          <button onClick={() => { setActiveTab('stats'); setIsMobileMenuOpen(false); }} className={`nav-btn ${activeTab === 'stats' ? 'active-nav' : ''}`}>
+            <History className="w-5 h-5" /> Statistics
+          </button>
+        </div>
 
         <div className="mt-auto p-4 bg-slate-800/50 rounded-lg">
           <h4 className="text-xs uppercase font-bold text-slate-500 mb-2">Equipped Race</h4>
@@ -1135,743 +1166,766 @@ const App: React.FC = () => {
       </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 overflow-y-auto bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
-        
-        {/* --- TAB: THE FORGE --- */}
-        {activeTab === 'forge' && (
-          <div className="flex flex-col items-center justify-center min-h-[80vh] gap-8">
-            <div className="relative w-full max-w-md perspective-1000">
-              {currentRace ? (
-                <RaceCard 
-                  race={currentRace} 
-                  animate={!isRolling} 
-                  isOwned={ownedRaceIds.has(currentRace.id)}
-                  isEquipped={currentRace.id === equippedRace.id}
-                />
-              ) : (
-                <div className="h-96 w-full border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-slate-600">
-                  <span className="fantasy-font text-xl">Ready to Forge...</span>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={handleRoll}
-              disabled={isRolling || shards < ROLL_COST}
-              className={`
-                group relative px-8 py-4 bg-gradient-to-b from-amber-500 to-amber-700 rounded-full 
-                font-bold text-xl uppercase tracking-widest text-white shadow-lg 
-                transform transition-all duration-100 
-                ${(isRolling || shards < ROLL_COST) ? 'scale-95 opacity-50 grayscale cursor-not-allowed' : 'hover:scale-105 hover:shadow-amber-500/50 active:scale-95'}
-              `}
-            >
-              {isRolling ? (
-                <span className="flex items-center gap-2">
-                  <Dices className="w-6 h-6 animate-spin" /> Forging...
-                </span>
-              ) : (
-                <span className="flex items-col md:flex-row items-center gap-2">
-                   <div className="flex items-center gap-2"><Dices className="w-6 h-6" /> Roll Race</div>
-                   <div className="text-xs bg-black/30 px-2 py-1 rounded flex items-center gap-1">
-                      <Gem className="w-3 h-3 text-purple-300" /> {ROLL_COST}
-                   </div>
-                </span>
-              )}
-            </button>
-            {shards < ROLL_COST && <p className="text-red-400 text-sm animate-pulse">Insufficient Soul Shards</p>}
-          </div>
-        )}
-
-        {/* --- TAB: FUSION --- */}
-        {activeTab === 'fusion' && (
-           <div className="max-w-5xl mx-auto space-y-8">
-             <div className="text-center border-b border-slate-800 pb-6">
-                <h2 className="text-3xl fantasy-font text-purple-400 flex items-center justify-center gap-3 mb-2">
-                  <Atom className="animate-spin-slow" /> Fusion Reactor
-                </h2>
-                <p className="text-slate-400">Combine two owned races to create a powerful Hybrid.</p>
-             </div>
-
-             <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-                {/* Slot 1 */}
-                <div className="w-full md:w-1/3 min-h-[300px] border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center p-4 relative bg-slate-900/50">
-                   {fusionSlot1 ? (
-                     <>
-                        <RaceCard race={fusionSlot1} isOwned={true} />
-                        <button 
-                          onClick={() => setFusionSlot1(null)}
-                          className="absolute top-2 right-2 text-red-500 hover:text-white bg-black/50 rounded-full p-1"
-                        >
-                          X
-                        </button>
-                     </>
-                   ) : (
-                     <span className="text-slate-600 font-bold">Select Race 1</span>
-                   )}
-                </div>
-
-                {/* Action Area */}
-                <div className="flex flex-col items-center gap-4">
-                   <div className="text-3xl font-bold text-slate-700">+</div>
-                   <button
-                     onClick={handleFusion}
-                     disabled={!fusionSlot1 || !fusionSlot2 || shards < FUSION_COST || fusionSlot1.id === fusionSlot2.id}
-                     className={`
-                       px-8 py-4 rounded-full font-bold text-lg shadow-lg flex flex-col items-center transition-all
-                       ${(!fusionSlot1 || !fusionSlot2 || shards < FUSION_COST || fusionSlot1.id === fusionSlot2.id) 
-                         ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
-                         : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:scale-105 hover:shadow-purple-500/40 text-white'}
-                     `}
-                   >
-                     <span>FUSE</span>
-                     <span className="text-xs bg-black/20 px-2 py-0.5 rounded flex items-center gap-1 mt-1">
-                        <Gem className="w-3 h-3" /> {FUSION_COST}
-                     </span>
-                   </button>
-                   {fusionSlot1 && fusionSlot2 && fusionSlot1.id === fusionSlot2.id && (
-                     <p className="text-xs text-red-400">Cannot fuse same race!</p>
-                   )}
-                </div>
-
-                {/* Slot 2 */}
-                <div className="w-full md:w-1/3 min-h-[300px] border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center p-4 relative bg-slate-900/50">
-                   {fusionSlot2 ? (
-                     <>
-                        <RaceCard race={fusionSlot2} isOwned={true} />
-                        <button 
-                          onClick={() => setFusionSlot2(null)}
-                          className="absolute top-2 right-2 text-red-500 hover:text-white bg-black/50 rounded-full p-1"
-                        >
-                          X
-                        </button>
-                     </>
-                   ) : (
-                     <span className="text-slate-600 font-bold">Select Race 2</span>
-                   )}
-                </div>
-             </div>
-
-             {/* Selection List */}
-             <div className="mt-8">
-               <h3 className="text-xl font-bold text-slate-400 mb-4">Select from Collection</h3>
-               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                 {races.filter(r => ownedRaceIds.has(r.id)).map(race => (
-                   <button
-                     key={race.id}
-                     onClick={() => {
-                        if (!fusionSlot1) setFusionSlot1(race);
-                        else if (!fusionSlot2) setFusionSlot2(race);
-                     }}
-                     disabled={fusionSlot1?.id === race.id || fusionSlot2?.id === race.id}
-                     className={`
-                       p-3 rounded border text-left transition-all
-                       ${RARITY_COLORS[race.rarity]} 
-                       ${(fusionSlot1?.id === race.id || fusionSlot2?.id === race.id) ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105 hover:brightness-125'}
-                     `}
-                   >
-                     <div className="font-bold text-sm truncate">{race.name}</div>
-                     <div className="text-[10px] uppercase">{race.rarity}</div>
-                   </button>
-                 ))}
-               </div>
-             </div>
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Mobile Header */}
+        <header className="md:hidden h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-40">
+           <div className="flex items-center gap-3">
+             <img 
+               src="https://images.unsplash.com/photo-1542259681-d262d9699666?q=80&w=200&auto=format&fit=crop" 
+               alt="Soul Forge" 
+               className="w-8 h-8 rounded-full border border-amber-500 object-cover"
+             />
+             <h1 className="text-xl font-bold fantasy-font text-amber-500">Soul Forge</h1>
            </div>
-        )}
+           <button 
+             onClick={() => setIsMobileMenuOpen(true)}
+             className="text-slate-300 hover:text-white p-2"
+           >
+             <Menu className="w-6 h-6" />
+           </button>
+        </header>
 
-        {/* --- TAB: SHOP --- */}
-        {activeTab === 'shop' && (
-          <div className="max-w-6xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-center border-b border-slate-800 pb-4 gap-4">
-              <h2 className="text-3xl fantasy-font text-amber-400 flex items-center gap-2">
-                <ShoppingBag /> Merchant's Wares
-              </h2>
-              
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
+          
+          {/* --- TAB: THE FORGE --- */}
+          {activeTab === 'forge' && (
+            <div className="flex flex-col items-center justify-center min-h-[80vh] gap-8">
+              <div className="relative w-full max-w-md perspective-1000">
+                {currentRace ? (
+                  <RaceCard 
+                    race={currentRace} 
+                    animate={!isRolling} 
+                    isOwned={ownedRaceIds.has(currentRace.id)}
+                    isEquipped={currentRace.id === equippedRace.id}
+                  />
+                ) : (
+                  <div className="h-96 w-full border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-slate-600">
+                    <span className="fantasy-font text-xl">Ready to Forge...</span>
+                  </div>
+                )}
+              </div>
+
               <button
-                onClick={() => handleRefreshShop(false)}
-                className="group flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg transition-all active:scale-95"
+                onClick={handleRoll}
+                disabled={isRolling || shards < ROLL_COST}
+                className={`
+                  group relative px-8 py-4 bg-gradient-to-b from-amber-500 to-amber-700 rounded-full 
+                  font-bold text-xl uppercase tracking-widest text-white shadow-lg 
+                  transform transition-all duration-100 
+                  ${(isRolling || shards < ROLL_COST) ? 'scale-95 opacity-50 grayscale cursor-not-allowed' : 'hover:scale-105 hover:shadow-amber-500/50 active:scale-95'}
+                `}
               >
-                <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-                <span className="font-bold text-sm">Restock</span>
-                <span className="bg-black/30 px-2 py-0.5 rounded text-xs flex items-center gap-1 text-purple-300">
-                  <Gem className="w-3 h-3" /> {SHOP_REFRESH_COST}
-                </span>
+                {isRolling ? (
+                  <span className="flex items-center gap-2">
+                    <Dices className="w-6 h-6 animate-spin" /> Forging...
+                  </span>
+                ) : (
+                  <span className="flex items-col md:flex-row items-center gap-2">
+                    <div className="flex items-center gap-2"><Dices className="w-6 h-6" /> Roll Race</div>
+                    <div className="text-xs bg-black/30 px-2 py-1 rounded flex items-center gap-1">
+                        <Gem className="w-3 h-3 text-purple-300" /> {ROLL_COST}
+                    </div>
+                  </span>
+                )}
               </button>
+              {shards < ROLL_COST && <p className="text-red-400 text-sm animate-pulse">Insufficient Soul Shards</p>}
             </div>
+          )}
 
-             {playerHasRaceAbility('goblin') && (
-              <div className="bg-green-900/30 p-2 rounded text-green-400 text-sm text-center border border-green-800">
-                Goblin Bargain Active! 12% Discount on all items.
+          {/* ... [Rest of the tabs: FUSION, SHOP, HERO, ADVENTURE, COLLECTION, CODES, STATS] ... */}
+          {/* I am re-including all other tab content here to ensure full functionality is restored. */}
+          
+          {/* --- TAB: FUSION --- */}
+          {activeTab === 'fusion' && (
+            <div className="max-w-5xl mx-auto space-y-8">
+              <div className="text-center border-b border-slate-800 pb-6">
+                  <h2 className="text-3xl fantasy-font text-purple-400 flex items-center justify-center gap-3 mb-2">
+                    <Atom className="animate-spin-slow" /> Fusion Reactor
+                  </h2>
+                  <p className="text-slate-400">Combine two owned races to create a powerful Hybrid.</p>
               </div>
-            )}
 
-            {shopStock.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-slate-500 gap-4 border-2 border-dashed border-slate-800 rounded-xl">
-                <ShoppingBag className="w-12 h-12 opacity-50" />
-                <p>Sold Out!</p>
-                <button 
-                  onClick={() => handleRefreshShop(false)}
-                  className="text-amber-500 hover:underline"
-                >
-                  Refresh Stock ({SHOP_REFRESH_COST} Shards)
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {shopStock.map((item) => (
-                  <div key={item.id} className="relative group animate-in fade-in zoom-in duration-300">
-                    <div className="h-full">
-                      <ItemCard item={item} />
-                    </div>
-                    <div className="absolute bottom-3 right-3">
-                      <button
-                        onClick={() => handleBuyItem(item)}
-                        disabled={shards < (playerHasRaceAbility('goblin') ? Math.floor((item.cost || 99999) * 0.88) : (item.cost || 99999))}
-                        className={`
-                          px-4 py-2 rounded text-sm font-bold flex items-center gap-2 shadow-lg transition-all
-                          ${shards >= (playerHasRaceAbility('goblin') ? Math.floor((item.cost || 99999) * 0.88) : (item.cost || 99999))
-                            ? 'bg-amber-600 hover:bg-amber-500 text-white' 
-                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'}
-                        `}
-                      >
-                        <span>Buy</span>
-                        <span className="bg-black/20 px-1.5 py-0.5 rounded flex items-center gap-1">
-                          <Gem className="w-3 h-3" /> 
-                          {playerHasRaceAbility('goblin') ? Math.floor((item.cost || 0) * 0.88) : item.cost}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* --- TAB: HERO STATUS --- */}
-        {activeTab === 'hero' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            {/* Stats Panel */}
-            <div className="space-y-6">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                <h2 className="text-3xl fantasy-font text-blue-400">Status</h2>
-                {level >= MAX_LEVEL && (
-                  <button 
-                    onClick={handleRebirth}
-                    className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2 rounded-full font-bold text-xs uppercase shadow-lg hover:scale-105 transition-transform animate-pulse"
-                  >
-                    <RefreshCw className="w-4 h-4" /> REBIRTH NOW
-                  </button>
-                )}
-              </div>
-              
-              <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700 relative overflow-hidden">
-                {rebirths > 0 && (
-                  <div className="absolute top-0 right-0 p-2 bg-amber-500/20 rounded-bl-xl text-amber-500 text-xs font-bold border-l border-b border-amber-500/50">
-                    Active Multiplier: x{1 + (rebirths * 0.25)}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-2xl font-bold">{equippedRace.name} Hero</h3>
-                    <div className="flex flex-col gap-1">
-                      <p className="text-slate-400 flex items-center gap-2">
-                         Level {level} {level >= MAX_LEVEL && <span className="text-amber-500 text-xs font-bold px-2 py-0.5 bg-amber-900/30 rounded border border-amber-700">MAX</span>}
-                      </p>
-                      {rebirths > 0 && (
-                        <div className="flex items-center gap-2 text-amber-400 text-sm font-bold mt-1 bg-amber-950/40 px-3 py-1.5 rounded-lg border border-amber-500/30 w-fit shadow-sm">
-                          <RefreshCw className="w-3 h-3" />
-                          <span>Rebirth {rebirths}</span>
-                          <span className="text-white/30">|</span>
-                          <span className="text-white">Multiplier: <span className="text-amber-300">x{1 + (rebirths * 0.25)}</span></span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className={`px-3 py-1 rounded border ${RARITY_COLORS[equippedRace.rarity]}`}>
-                    {equippedRace.rarity}
-                  </div>
-                </div>
-
-                {/* Secondary Soul Slot (Fusion Core) */}
-                {isFusionCoreActive && (
-                  <div className="mb-6 bg-purple-900/20 rounded-lg p-3 border border-purple-500/30 relative">
-                     <span className="absolute -top-2 left-2 bg-purple-600 text-[10px] text-white px-2 rounded-full font-bold shadow-lg">FUSION CORE ACTIVE</span>
-                     <div className="flex justify-between items-center mt-2">
-                        <div className="flex items-center gap-2">
-                           <Atom className="w-5 h-5 text-purple-400 animate-spin-slow" />
-                           <span className="text-sm font-bold text-purple-200">Secondary Soul:</span>
-                           {secondaryRace ? (
-                             <span className={`px-2 py-0.5 rounded text-xs font-bold border ${RARITY_COLORS[secondaryRace.rarity]}`}>{secondaryRace.name}</span>
-                           ) : (
-                             <span className="text-slate-500 italic text-sm">None Selected</span>
-                           )}
-                        </div>
-                        {secondaryRace && (
-                          <button onClick={() => setSecondaryRace(null)} className="text-xs bg-red-900/30 text-red-400 px-2 py-1 rounded border border-red-800 hover:bg-red-900/50">
-                             Unequip
+              <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+                  {/* Slot 1 */}
+                  <div className="w-full md:w-1/3 min-h-[300px] border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center p-4 relative bg-slate-900/50">
+                    {fusionSlot1 ? (
+                      <>
+                          <RaceCard race={fusionSlot1} isOwned={true} />
+                          <button 
+                            onClick={() => setFusionSlot1(null)}
+                            className="absolute top-2 right-2 text-red-500 hover:text-white bg-black/50 rounded-full p-1"
+                          >
+                            X
                           </button>
-                        )}
-                     </div>
-                     {!secondaryRace && (
-                        <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar bg-black/20 p-2 rounded">
-                           {Array.from(ownedRaceIds).map(id => {
-                             const race = races.find(r => r.id === id);
-                             if (!race || race.id === equippedRace.id) return null;
-                             return (
-                               <button 
-                                 key={id}
-                                 onClick={() => setSecondaryRace(race)}
-                                 className={`text-[10px] p-2 rounded border ${RARITY_COLORS[race.rarity]} truncate hover:brightness-125 transition-all text-center`}
-                               >
-                                 {race.name}
-                               </button>
-                             );
-                           })}
-                        </div>
-                     )}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="stat-box text-red-400 border-red-900/50">
-                     <div className="flex items-center gap-2 mb-1"><Swords className="w-4 h-4" /> Attack</div>
-                     <span className="text-2xl font-mono">{heroStats.attack}</span>
-                   </div>
-                   <div className="stat-box text-blue-400 border-blue-900/50">
-                     <div className="flex items-center gap-2 mb-1"><Shield className="w-4 h-4" /> Defense</div>
-                     <span className="text-2xl font-mono">{heroStats.defense}</span>
-                   </div>
-                   <div className="stat-box text-green-400 border-green-900/50">
-                     <div className="flex items-center gap-2 mb-1"><Heart className="w-4 h-4" /> Health</div>
-                     <span className="text-2xl font-mono">{heroStats.health}</span>
-                   </div>
-                   <div className="stat-box text-yellow-400 border-yellow-900/50">
-                     <div className="flex items-center gap-2 mb-1"><Zap className="w-4 h-4" /> Speed</div>
-                     <span className="text-2xl font-mono">{heroStats.speed}</span>
-                   </div>
-                   <div className="stat-box text-purple-400 border-purple-900/50 col-span-2">
-                     <div className="flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4" /> Luck</div>
-                     <span className="text-2xl font-mono">{heroStats.luck}</span>
-                   </div>
-                </div>
-              </div>
-
-              {/* Equipment Slots */}
-              <h3 className="text-xl font-bold text-slate-300 mt-6 mb-2">Equipment</h3>
-              <div className="grid grid-cols-3 gap-4">
-                 {['weapon', 'armor', 'accessory'].map((slot) => {
-                   const item = equipment[slot as ItemType];
-                   return (
-                     <div key={slot} className="bg-slate-900/50 p-2 rounded-lg border border-slate-700 min-h-[120px] flex flex-col items-center justify-center text-center relative group">
-                       <span className="absolute top-1 left-2 text-[10px] uppercase text-slate-500">{slot}</span>
-                       {item ? (
-                         <div className="w-full">
-                           <ItemCard item={item} />
-                           <button 
-                              onClick={() => handleUnequipItem(slot as ItemType)}
-                              className="mt-1 text-[10px] text-red-400 hover:text-red-300 w-full"
-                           >
-                             Unequip
-                           </button>
-                         </div>
-                       ) : (
-                         <div className="opacity-30">
-                           <Shield className="w-8 h-8 mx-auto mb-1" />
-                           <span className="text-xs">Empty</span>
-                         </div>
-                       )}
-                     </div>
-                   );
-                 })}
-              </div>
-            </div>
-
-            {/* Inventory Panel */}
-            <div className="bg-slate-900/50 rounded-xl border border-slate-700 p-4 h-full flex flex-col">
-              <h3 className="text-xl font-bold text-amber-400 mb-4 flex items-center gap-2">
-                <Gem /> Inventory ({inventory.length})
-              </h3>
-              
-              <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                 {inventory.length === 0 ? (
-                   <div className="text-center text-slate-500 py-10">Inventory is empty. <br/>Go on adventures to find loot!</div>
-                 ) : (
-                   inventory.map((item, idx) => (
-                     <div key={item.id || idx} className="flex gap-2">
-                        <div className="flex-1">
-                          <ItemCard 
-                            item={item} 
-                            onAction={handleEquipItem} 
-                            actionLabel={item.type === 'potion' ? '' : 'Equip'} 
-                          />
-                        </div>
-                        <button 
-                          onClick={() => handleSellItem(item)}
-                          className="px-2 bg-red-900/20 border border-red-900/50 rounded flex flex-col items-center justify-center text-red-400 hover:bg-red-900/40"
-                          title="Sell"
-                        >
-                          <Coins className="w-4 h-4 mb-1" />
-                          <span className="text-xs">Sell</span>
-                        </button>
-                     </div>
-                   ))
-                 )}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* --- TAB: ADVENTURE --- */}
-        {activeTab === 'adventure' && (
-          <div className="max-w-5xl mx-auto space-y-8">
-            <h2 className="text-3xl fantasy-font text-red-400 mb-8 border-b border-slate-800 pb-4 flex items-center gap-3">
-              <Swords /> Adventure
-            </h2>
-
-            {/* Battle Arena Visualizer */}
-            <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700 shadow-xl overflow-hidden relative">
-                
-                {combatState ? (
-                  <div className="animate-in fade-in zoom-in duration-300">
-                    {/* Header: Turn Indicator & VS */}
-                    <div className="text-center mb-6">
-                       {combatState.isFinished ? (
-                         <div className={`text-4xl font-bold fantasy-font ${combatState.won ? 'text-green-400' : 'text-red-500'}`}>
-                           {combatState.won ? 'VICTORY' : 'DEFEATED'}
-                         </div>
-                       ) : (
-                         <div className="text-xl font-bold text-amber-400 fantasy-font">
-                           {combatState.turn === 0 ? 'PREPARING BATTLE...' : `TURN ${combatState.turn}`}
-                         </div>
-                       )}
-                    </div>
-
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-6">
-                      
-                      {/* PLAYER */}
-                      <div className="flex-1 w-full relative">
-                        <div className={`p-4 rounded-lg border-2 ${RARITY_COLORS[equippedRace.rarity]} bg-slate-900/50 text-center transition-all ${combatState.playerCurrentHp < combatState.playerMaxHp && !combatState.isFinished ? 'animate-pulse bg-red-900/20' : ''}`}>
-                           <h3 className="font-bold text-xl mb-1">{equippedRace.name}</h3>
-                           {isFusionCoreActive && secondaryRace && (
-                              <div className="text-xs font-bold text-purple-300 mb-1 flex items-center justify-center gap-1">
-                                <Atom className="w-3 h-3" /> {secondaryRace.name} Soul Active
-                              </div>
-                           )}
-                           <div className="text-xs uppercase text-slate-400 mb-2">Lvl {level} Hero</div>
-                           
-                           {/* HP Bar */}
-                           <div className="h-4 bg-slate-800 rounded-full overflow-hidden mb-2 border border-slate-700">
-                              <div 
-                                className="h-full bg-green-500 transition-all duration-500"
-                                style={{ width: `${Math.max(0, (combatState.playerCurrentHp / combatState.playerMaxHp) * 100)}%` }}
-                              />
-                           </div>
-                           <div className="text-sm font-mono">{combatState.playerCurrentHp} / {combatState.playerMaxHp} HP</div>
-                           
-                           {/* Status Icons */}
-                           <div className="flex justify-center gap-1 mt-2">
-                             {combatState.effects.playerBurnStacks > 0 && <span title="Burned" className="text-xs bg-red-900 px-1 rounded">🔥 {combatState.effects.playerBurnStacks}</span>}
-                           </div>
-                        </div>
-                      </div>
-
-                      {/* VS & STAT COMPARISON */}
-                      <div className="flex flex-col items-center justify-center min-w-[150px]">
-                         <div className="text-3xl font-bold text-red-500 italic mb-4">VS</div>
-                         
-                         {/* Stats Grid */}
-                         <div className="bg-black/40 p-3 rounded-lg text-xs space-y-2 w-full">
-                           <div className="flex justify-between items-center text-slate-400 border-b border-slate-700 pb-1 mb-1">
-                             <span>YOU</span> <span>STATS</span> <span>FOE</span>
-                           </div>
-                           <div className="flex justify-between items-center">
-                              <span className="text-red-400">{heroStats.attack}</span> 
-                              <Swords className="w-3 h-3 text-slate-600"/> 
-                              <span className="text-red-400">{combatState.enemyStats.attack}</span>
-                           </div>
-                           <div className="flex justify-between items-center">
-                              <span className="text-blue-400">{heroStats.defense}</span> 
-                              <Shield className="w-3 h-3 text-slate-600"/> 
-                              <span className="text-blue-400">{combatState.enemyStats.defense}</span>
-                           </div>
-                           <div className="flex justify-between items-center">
-                              <span className="text-yellow-400">{heroStats.speed}</span> 
-                              <Zap className="w-3 h-3 text-slate-600"/> 
-                              <span className="text-yellow-400">{combatState.enemyStats.speed}</span>
-                           </div>
-                         </div>
-                      </div>
-
-                      {/* ENEMY */}
-                      <div className="flex-1 w-full relative">
-                        <div className={`p-4 rounded-lg border-2 ${RARITY_COLORS[combatState.enemyRace.rarity]} bg-slate-900/50 text-center transition-all ${combatState.enemyCurrentHp < combatState.enemyMaxHp && !combatState.isFinished ? 'animate-pulse bg-red-900/20' : ''}`}>
-                           <h3 className="font-bold text-xl mb-1">{combatState.enemyRace.name}</h3>
-                           <div className="text-xs uppercase text-slate-400 mb-2">Lvl {combatState.enemyLevel} {combatState.enemyRace.rarity}</div>
-                           
-                           {/* HP Bar */}
-                           <div className="h-4 bg-slate-800 rounded-full overflow-hidden mb-2 border border-slate-700">
-                              <div 
-                                className="h-full bg-red-500 transition-all duration-500"
-                                style={{ width: `${Math.max(0, (combatState.enemyCurrentHp / combatState.enemyMaxHp) * 100)}%` }}
-                              />
-                           </div>
-                           <div className="text-sm font-mono">{combatState.enemyCurrentHp} / {combatState.enemyMaxHp} HP</div>
-
-                           {/* Status Icons */}
-                           <div className="flex justify-center gap-1 mt-2">
-                             {combatState.effects.enemyBurnStacks > 0 && <span title="Burned" className="text-xs bg-red-900 px-1 rounded">🔥 {combatState.effects.enemyBurnStacks}</span>}
-                           </div>
-                        </div>
-                      </div>
-
-                    </div>
-
-                    {/* Combat Log */}
-                    <div 
-                      ref={logContainerRef}
-                      className="bg-black/50 rounded-lg p-4 h-48 overflow-y-auto font-mono text-sm space-y-1 border border-slate-800 scroll-smooth"
-                    >
-                      {combatState.log.map((entry, i) => (
-                        <div key={i} className={`
-                          ${entry.includes('Victory') ? 'text-green-400 font-bold text-lg' : ''}
-                          ${entry.includes('defeated') ? 'text-red-400 font-bold text-lg' : ''}
-                          ${entry.includes('hit') ? 'text-slate-200' : 'text-slate-500'}
-                          ${entry.includes('Loot') ? 'text-amber-300' : ''}
-                          ${entry.includes('crit') || entry.includes('CRIT') || entry.includes('Critical') ? 'text-yellow-400 font-bold' : ''}
-                          ${entry.includes('burn') || entry.includes('fire') || entry.includes('Hellfire') ? 'text-orange-400' : ''}
-                          ${entry.includes('heal') || entry.includes('regenerated') || entry.includes('absorbed') ? 'text-green-300' : ''}
-                        `}>
-                          <span className="opacity-50 mr-2">[{i}]</span> {entry}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Action Buttons */}
-                    {combatState.isFinished && (
-                      <div className="mt-4 flex justify-center">
-                        <button 
-                          onClick={leaveCombat}
-                          className="bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition-all"
-                        >
-                          Return to Camp
-                        </button>
-                      </div>
+                      </>
+                    ) : (
+                      <span className="text-slate-600 font-bold">Select Race 1</span>
                     )}
+                  </div>
 
-                  </div>
-                ) : (
-                  // Idle State
-                  <div className="flex flex-col items-center justify-center min-h-[300px] text-center space-y-6">
-                    <div className="bg-red-900/20 p-6 rounded-full">
-                       <Swords className="w-16 h-16 text-red-500" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-slate-200">Arena Battle</h3>
-                      <p className="text-slate-400 max-w-md mx-auto mt-2">
-                        Challenge a random opponent from the multiverse. Enemies will scale to your level.
-                      </p>
-                    </div>
-                    
-                    <button 
-                      onClick={initializeCombat}
-                      className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-red-600 font-pj rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 hover:bg-red-500"
-                    >
-                      Find Match
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </div>
-                )}
-            </div>
-
-            {/* Active Mission (Simplified if in combat, or just below) */}
-            {!combatState && (
-              <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700 shadow-xl">
-                 <h3 className="text-xl font-bold text-slate-200 mb-4 flex items-center gap-2">
-                  <Scroll className="text-amber-500" /> Active Mission
-                </h3>
-                {activeMission ? (
-                  <div className="flex flex-col h-full justify-center gap-4">
-                     <div className="text-lg font-bold text-amber-200 text-center">
-                       {MISSIONS.find(m => m.id === activeMission)?.name}
-                     </div>
-                     <div className="w-full bg-slate-800 rounded-full h-4 overflow-hidden">
-                       <div 
-                        className="bg-amber-500 h-full transition-all duration-100"
-                        style={{ width: `${missionProgress}%` }}
-                       />
-                     </div>
-                     <p className="text-center text-xs text-slate-500">
-                        Completing... {heroStats.speed > 0 && <span className="text-yellow-400">(Speed Bonus: {Math.floor(heroStats.speed)}%)</span>}
-                     </p>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-24 text-slate-500 italic border-2 border-dashed border-slate-800 rounded-lg">
-                    No active mission running.
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Mission List */}
-            {!combatState && (
-              <div>
-                <h3 className="text-lg font-bold text-slate-400 mb-4">Available Missions</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {MISSIONS.map(mission => (
+                  {/* Action Area */}
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="text-3xl font-bold text-slate-700">+</div>
                     <button
-                      key={mission.id}
-                      onClick={() => startMission(mission)}
-                      disabled={!!activeMission}
+                      onClick={handleFusion}
+                      disabled={!fusionSlot1 || !fusionSlot2 || shards < FUSION_COST || fusionSlot1.id === fusionSlot2.id}
                       className={`
-                        flex justify-between items-center p-4 rounded-lg border text-left transition-all
-                        ${!!activeMission ? 'opacity-50 cursor-not-allowed bg-slate-900 border-slate-800' : 'bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-amber-500/50'}
+                        px-8 py-4 rounded-full font-bold text-lg shadow-lg flex flex-col items-center transition-all
+                        ${(!fusionSlot1 || !fusionSlot2 || shards < FUSION_COST || fusionSlot1.id === fusionSlot2.id) 
+                          ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+                          : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:scale-105 hover:shadow-purple-500/40 text-white'}
                       `}
                     >
-                      <div>
-                        <div className="font-bold text-slate-200">{mission.name}</div>
-                        <div className="text-xs text-slate-400">{mission.description}</div>
-                        {mission.minRarity && (
-                          <div className="text-[10px] mt-1 text-red-400 uppercase">Requires: {mission.minRarity}</div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 font-bold text-purple-400">
-                          <Gem className="w-3 h-3" /> {mission.reward}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-green-400 justify-end mt-1">
-                          +{mission.xpReward} XP
-                        </div>
-                        <div className="text-xs text-slate-500 mt-1">{mission.duration / 1000}s</div>
-                      </div>
+                      <span>FUSE</span>
+                      <span className="text-xs bg-black/20 px-2 py-0.5 rounded flex items-center gap-1 mt-1">
+                          <Gem className="w-3 h-3" /> {FUSION_COST}
+                      </span>
+                    </button>
+                    {fusionSlot1 && fusionSlot2 && fusionSlot1.id === fusionSlot2.id && (
+                      <p className="text-xs text-red-400">Cannot fuse same race!</p>
+                    )}
+                  </div>
+
+                  {/* Slot 2 */}
+                  <div className="w-full md:w-1/3 min-h-[300px] border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center p-4 relative bg-slate-900/50">
+                    {fusionSlot2 ? (
+                      <>
+                          <RaceCard race={fusionSlot2} isOwned={true} />
+                          <button 
+                            onClick={() => setFusionSlot2(null)}
+                            className="absolute top-2 right-2 text-red-500 hover:text-white bg-black/50 rounded-full p-1"
+                          >
+                            X
+                          </button>
+                      </>
+                    ) : (
+                      <span className="text-slate-600 font-bold">Select Race 2</span>
+                    )}
+                  </div>
+              </div>
+
+              {/* Selection List */}
+              <div className="mt-8">
+                <h3 className="text-xl font-bold text-slate-400 mb-4">Select from Collection</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {races.filter(r => ownedRaceIds.has(r.id)).map(race => (
+                    <button
+                      key={race.id}
+                      onClick={() => {
+                          if (!fusionSlot1) setFusionSlot1(race);
+                          else if (!fusionSlot2) setFusionSlot2(race);
+                      }}
+                      disabled={fusionSlot1?.id === race.id || fusionSlot2?.id === race.id}
+                      className={`
+                        p-3 rounded border text-left transition-all
+                        ${RARITY_COLORS[race.rarity]} 
+                        ${(fusionSlot1?.id === race.id || fusionSlot2?.id === race.id) ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105 hover:brightness-125'}
+                      `}
+                    >
+                      <div className="font-bold text-sm truncate">{race.name}</div>
+                      <div className="text-[10px] uppercase">{race.rarity}</div>
                     </button>
                   ))}
                 </div>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* --- TAB: COLLECTION --- */}
-        {activeTab === 'collection' && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-8">
-               <h2 className="text-3xl fantasy-font text-indigo-400">Race Collection</h2>
-               <div className="text-slate-400">
-                 Owned: <span className="text-white font-bold">{ownedRaceIds.size}</span> / {races.length}
-               </div>
             </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {races.map((race) => (
-                <RaceCard 
-                  key={race.id} 
-                  race={race} 
-                  isOwned={ownedRaceIds.has(race.id)}
-                  isEquipped={equippedRace.id === race.id}
-                  onEquip={handleEquipRace}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* --- TAB: CODES --- */}
-        {activeTab === 'codes' && (
-          <div className="max-w-2xl mx-auto flex flex-col items-center justify-center h-full min-h-[60vh]">
-            <div className="w-full bg-slate-900/90 p-10 rounded-2xl border border-emerald-900/50 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent"></div>
-              
-              <h2 className="text-3xl fantasy-font text-emerald-400 mb-2 text-center flex items-center justify-center gap-2">
-                <KeyRound /> Secret Codes
-              </h2>
-              <p className="text-slate-400 text-center mb-8">
-                Whisper the ancient words to the forge to receive its blessings.
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">Enter Code</label>
-                  <input 
-                    type="text" 
-                    value={codeScan}
-                    onChange={(e) => setCodeScan(e.target.value)}
-                    placeholder="e.g. WELCOME"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-white text-center tracking-widest uppercase font-mono focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-slate-700"
-                  />
-                </div>
-
-                <button 
-                  onClick={handleRedeemCode}
-                  disabled={!codeScan.trim()}
-                  className={`
-                    w-full py-4 rounded-lg font-bold text-lg uppercase tracking-widest transition-all
-                    flex items-center justify-center gap-2
-                    bg-emerald-700 hover:bg-emerald-600 text-white shadow-lg hover:shadow-emerald-500/20
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  `}
+          {/* --- TAB: SHOP --- */}
+          {activeTab === 'shop' && (
+            <div className="max-w-6xl mx-auto space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-center border-b border-slate-800 pb-4 gap-4">
+                <h2 className="text-3xl fantasy-font text-amber-400 flex items-center gap-2">
+                  <ShoppingBag /> Merchant's Wares
+                </h2>
+                
+                <button
+                  onClick={() => handleRefreshShop(false)}
+                  className="group flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg transition-all active:scale-95"
                 >
-                  Redeem
+                  <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                  <span className="font-bold text-sm">Restock</span>
+                  <span className="bg-black/30 px-2 py-0.5 rounded text-xs flex items-center gap-1 text-purple-300">
+                    <Gem className="w-3 h-3" /> {SHOP_REFRESH_COST}
+                  </span>
                 </button>
               </div>
 
-              <div className="mt-8">
-                 <h4 className="text-xs uppercase font-bold text-slate-500 mb-2 text-center">Hints</h4>
-                 <div className="flex flex-wrap gap-2 justify-center">
-                   <span className="text-xs bg-black/20 px-2 py-1 rounded text-slate-600">Start</span>
-                   <span className="text-xs bg-black/20 px-2 py-1 rounded text-slate-600">The Forge</span>
-                   <span className="text-xs bg-black/20 px-2 py-1 rounded text-slate-600">Legend</span>
-                   <span className="text-xs bg-black/20 px-2 py-1 rounded text-slate-600">Ultimate</span>
-                 </div>
-              </div>
+              {playerHasRaceAbility('goblin') && (
+                <div className="bg-green-900/30 p-2 rounded text-green-400 text-sm text-center border border-green-800">
+                  Goblin Bargain Active! 12% Discount on all items.
+                </div>
+              )}
+
+              {shopStock.length === 0 ? (
+                <div className="h-64 flex flex-col items-center justify-center text-slate-500 gap-4 border-2 border-dashed border-slate-800 rounded-xl">
+                  <ShoppingBag className="w-12 h-12 opacity-50" />
+                  <p>Sold Out!</p>
+                  <button 
+                    onClick={() => handleRefreshShop(false)}
+                    className="text-amber-500 hover:underline"
+                  >
+                    Refresh Stock ({SHOP_REFRESH_COST} Shards)
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {shopStock.map((item) => (
+                    <div key={item.id} className="relative group animate-in fade-in zoom-in duration-300">
+                      <div className="h-full">
+                        <ItemCard item={item} />
+                      </div>
+                      <div className="absolute bottom-3 right-3">
+                        <button
+                          onClick={() => handleBuyItem(item)}
+                          disabled={shards < (playerHasRaceAbility('goblin') ? Math.floor((item.cost || 99999) * 0.88) : (item.cost || 99999))}
+                          className={`
+                            px-4 py-2 rounded text-sm font-bold flex items-center gap-2 shadow-lg transition-all
+                            ${shards >= (playerHasRaceAbility('goblin') ? Math.floor((item.cost || 99999) * 0.88) : (item.cost || 99999))
+                              ? 'bg-amber-600 hover:bg-amber-500 text-white' 
+                              : 'bg-slate-700 text-slate-500 cursor-not-allowed'}
+                          `}
+                        >
+                          <span>Buy</span>
+                          <span className="bg-black/20 px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <Gem className="w-3 h-3" /> 
+                            {playerHasRaceAbility('goblin') ? Math.floor((item.cost || 0) * 0.88) : item.cost}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* --- TAB: STATS --- */}
-        {activeTab === 'stats' && (
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl fantasy-font text-emerald-400 mb-8 border-b border-slate-800 pb-4">Forge Statistics</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700">
-                <h3 className="text-lg font-bold text-slate-400 mb-2">Total Rolls Session</h3>
-                <p className="text-4xl font-bold text-white">{rollHistory.length}</p>
-              </div>
-              <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700">
-                <h3 className="text-lg font-bold text-slate-400 mb-2">Highest Rarity Owned</h3>
-                <p className="text-2xl font-bold text-amber-400">
-                   {Array.from(ownedRaceIds).map(id => races.find(r => r.id === id)).reduce((prev, current) => {
-                      const pRank = RARITY_POWER[prev?.rarity || Rarity.COMMON];
-                      const cRank = RARITY_POWER[current?.rarity || Rarity.COMMON];
-                      return cRank > pRank ? current : prev;
-                   }, INITIAL_RACES[0])?.rarity}
-                </p>
-              </div>
-            </div>
+          {/* --- TAB: HERO STATUS --- */}
+          {activeTab === 'hero' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              
+              {/* Stats Panel */}
+              <div className="space-y-6">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                  <h2 className="text-3xl fantasy-font text-blue-400">Status</h2>
+                  {level >= MAX_LEVEL && (
+                    <button 
+                      onClick={handleRebirth}
+                      className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2 rounded-full font-bold text-xs uppercase shadow-lg hover:scale-105 transition-transform animate-pulse"
+                    >
+                      <RefreshCw className="w-4 h-4" /> REBIRTH NOW
+                    </button>
+                  )}
+                </div>
+                
+                <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700 relative overflow-hidden">
+                  {rebirths > 0 && (
+                    <div className="absolute top-0 right-0 p-2 bg-amber-500/20 rounded-bl-xl text-amber-500 text-xs font-bold border-l border-b border-amber-500/50">
+                      Active Multiplier: x{1 + (rebirths * 0.25)}
+                    </div>
+                  )}
 
-            <StatsChart races={races} />
-
-            <div className="mt-8">
-              <h3 className="text-xl font-bold mb-4">Roll History</h3>
-              <div className="bg-slate-900/50 rounded-lg overflow-hidden border border-slate-800">
-                {rollHistory.map((race, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-3 border-b border-slate-800 last:border-0 hover:bg-slate-800/50">
-                    <span className={`font-bold ${
-                      race.rarity === Rarity.MYTHICAL ? 'text-rose-500' : 
-                      race.rarity === Rarity.LEGENDARY ? 'text-amber-400' : 'text-slate-300'
-                    }`}>{race.name}</span>
-                    <span className="text-xs uppercase px-2 py-1 rounded bg-slate-950 text-slate-500">{race.rarity}</span>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-2xl font-bold">{equippedRace.name} Hero</h3>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-slate-400 flex items-center gap-2">
+                          Level {level} {level >= MAX_LEVEL && <span className="text-amber-500 text-xs font-bold px-2 py-0.5 bg-amber-900/30 rounded border border-amber-700">MAX</span>}
+                        </p>
+                        {rebirths > 0 && (
+                          <div className="flex items-center gap-2 text-amber-400 text-sm font-bold mt-1 bg-amber-950/40 px-3 py-1.5 rounded-lg border border-amber-500/30 w-fit shadow-sm">
+                            <RefreshCw className="w-3 h-3" />
+                            <span>Rebirth {rebirths}</span>
+                            <span className="text-white/30">|</span>
+                            <span className="text-white">Multiplier: <span className="text-amber-300">x{1 + (rebirths * 0.25)}</span></span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className={`px-3 py-1 rounded border ${RARITY_COLORS[equippedRace.rarity]}`}>
+                      {equippedRace.rarity}
+                    </div>
                   </div>
-                ))}
-                {rollHistory.length === 0 && <div className="p-4 text-center text-slate-500">No history available</div>}
+
+                  {/* Secondary Soul Slot (Fusion Core) */}
+                  {isFusionCoreActive && (
+                    <div className="mb-6 bg-purple-900/20 rounded-lg p-3 border border-purple-500/30 relative">
+                      <span className="absolute -top-2 left-2 bg-purple-600 text-[10px] text-white px-2 rounded-full font-bold shadow-lg">FUSION CORE ACTIVE</span>
+                      <div className="flex justify-between items-center mt-2">
+                          <div className="flex items-center gap-2">
+                            <Atom className="w-5 h-5 text-purple-400 animate-spin-slow" />
+                            <span className="text-sm font-bold text-purple-200">Secondary Soul:</span>
+                            {secondaryRace ? (
+                              <span className={`px-2 py-0.5 rounded text-xs font-bold border ${RARITY_COLORS[secondaryRace.rarity]}`}>{secondaryRace.name}</span>
+                            ) : (
+                              <span className="text-slate-500 italic text-sm">None Selected</span>
+                            )}
+                          </div>
+                          {secondaryRace && (
+                            <button onClick={() => setSecondaryRace(null)} className="text-xs bg-red-900/30 text-red-400 px-2 py-1 rounded border border-red-800 hover:bg-red-900/50">
+                              Unequip
+                            </button>
+                          )}
+                      </div>
+                      {!secondaryRace && (
+                          <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar bg-black/20 p-2 rounded">
+                            {Array.from(ownedRaceIds).map(id => {
+                              const race = races.find(r => r.id === id);
+                              if (!race || race.id === equippedRace.id) return null;
+                              return (
+                                <button 
+                                  key={id}
+                                  onClick={() => setSecondaryRace(race)}
+                                  className={`text-[10px] p-2 rounded border ${RARITY_COLORS[race.rarity]} truncate hover:brightness-125 transition-all text-center`}
+                                >
+                                  {race.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="stat-box text-red-400 border-red-900/50">
+                      <div className="flex items-center gap-2 mb-1"><Swords className="w-4 h-4" /> Attack</div>
+                      <span className="text-2xl font-mono">{heroStats.attack}</span>
+                    </div>
+                    <div className="stat-box text-blue-400 border-blue-900/50">
+                      <div className="flex items-center gap-2 mb-1"><Shield className="w-4 h-4" /> Defense</div>
+                      <span className="text-2xl font-mono">{heroStats.defense}</span>
+                    </div>
+                    <div className="stat-box text-green-400 border-green-900/50">
+                      <div className="flex items-center gap-2 mb-1"><Heart className="w-4 h-4" /> Health</div>
+                      <span className="text-2xl font-mono">{heroStats.health}</span>
+                    </div>
+                    <div className="stat-box text-yellow-400 border-yellow-900/50">
+                      <div className="flex items-center gap-2 mb-1"><Zap className="w-4 h-4" /> Speed</div>
+                      <span className="text-2xl font-mono">{heroStats.speed}</span>
+                    </div>
+                    <div className="stat-box text-purple-400 border-purple-900/50 col-span-2">
+                      <div className="flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4" /> Luck</div>
+                      <span className="text-2xl font-mono">{heroStats.luck}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Equipment Slots */}
+                <h3 className="text-xl font-bold text-slate-300 mt-6 mb-2">Equipment</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  {['weapon', 'armor', 'accessory'].map((slot) => {
+                    const item = equipment[slot as ItemType];
+                    return (
+                      <div key={slot} className="bg-slate-900/50 p-2 rounded-lg border border-slate-700 min-h-[120px] flex flex-col items-center justify-center text-center relative group">
+                        <span className="absolute top-1 left-2 text-[10px] uppercase text-slate-500">{slot}</span>
+                        {item ? (
+                          <div className="w-full">
+                            <ItemCard item={item} />
+                            <button 
+                                onClick={() => handleUnequipItem(slot as ItemType)}
+                                className="mt-1 text-[10px] text-red-400 hover:text-red-300 w-full"
+                            >
+                              Unequip
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="opacity-30">
+                            <Shield className="w-8 h-8 mx-auto mb-1" />
+                            <span className="text-xs">Empty</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Inventory Panel */}
+              <div className="bg-slate-900/50 rounded-xl border border-slate-700 p-4 h-full flex flex-col">
+                <h3 className="text-xl font-bold text-amber-400 mb-4 flex items-center gap-2">
+                  <Gem /> Inventory ({inventory.length})
+                </h3>
+                
+                <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                  {inventory.length === 0 ? (
+                    <div className="text-center text-slate-500 py-10">Inventory is empty. <br/>Go on adventures to find loot!</div>
+                  ) : (
+                    inventory.map((item, idx) => (
+                      <div key={item.id || idx} className="flex gap-2">
+                          <div className="flex-1">
+                            <ItemCard 
+                              item={item} 
+                              onAction={handleEquipItem} 
+                              actionLabel={item.type === 'potion' ? '' : 'Equip'} 
+                            />
+                          </div>
+                          <button 
+                            onClick={() => handleSellItem(item)}
+                            className="px-2 bg-red-900/20 border border-red-900/50 rounded flex flex-col items-center justify-center text-red-400 hover:bg-red-900/40"
+                            title="Sell"
+                          >
+                            <Coins className="w-4 h-4 mb-1" />
+                            <span className="text-xs">Sell</span>
+                          </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+          
+          {/* --- TAB: ADVENTURE --- */}
+          {activeTab === 'adventure' && (
+            <div className="max-w-5xl mx-auto space-y-8">
+              <h2 className="text-3xl fantasy-font text-red-400 mb-8 border-b border-slate-800 pb-4 flex items-center gap-3">
+                <Swords /> Adventure
+              </h2>
 
-      </main>
+              {/* Battle Arena Visualizer */}
+              <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700 shadow-xl overflow-hidden relative">
+                  
+                  {combatState ? (
+                    <div className="animate-in fade-in zoom-in duration-300">
+                      {/* Header: Turn Indicator & VS */}
+                      <div className="text-center mb-6">
+                        {combatState.isFinished ? (
+                          <div className={`text-4xl font-bold fantasy-font ${combatState.won ? 'text-green-400' : 'text-red-500'}`}>
+                            {combatState.won ? 'VICTORY' : 'DEFEATED'}
+                          </div>
+                        ) : (
+                          <div className="text-xl font-bold text-amber-400 fantasy-font">
+                            {combatState.turn === 0 ? 'PREPARING BATTLE...' : `TURN ${combatState.turn}`}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-6">
+                        
+                        {/* PLAYER */}
+                        <div className="flex-1 w-full relative">
+                          <div className={`p-4 rounded-lg border-2 ${RARITY_COLORS[equippedRace.rarity]} bg-slate-900/50 text-center transition-all ${combatState.playerCurrentHp < combatState.playerMaxHp && !combatState.isFinished ? 'animate-pulse bg-red-900/20' : ''}`}>
+                            <h3 className="font-bold text-xl mb-1">{equippedRace.name}</h3>
+                            {isFusionCoreActive && secondaryRace && (
+                                <div className="text-xs font-bold text-purple-300 mb-1 flex items-center justify-center gap-1">
+                                  <Atom className="w-3 h-3" /> {secondaryRace.name} Soul Active
+                                </div>
+                            )}
+                            <div className="text-xs uppercase text-slate-400 mb-2">Lvl {level} Hero</div>
+                            
+                            {/* HP Bar */}
+                            <div className="h-4 bg-slate-800 rounded-full overflow-hidden mb-2 border border-slate-700">
+                                <div 
+                                  className="h-full bg-green-500 transition-all duration-500"
+                                  style={{ width: `${Math.max(0, (combatState.playerCurrentHp / combatState.playerMaxHp) * 100)}%` }}
+                                />
+                            </div>
+                            <div className="text-sm font-mono">{combatState.playerCurrentHp} / {combatState.playerMaxHp} HP</div>
+                            
+                            {/* Status Icons */}
+                            <div className="flex justify-center gap-1 mt-2">
+                              {combatState.effects.playerBurnStacks > 0 && <span title="Burned" className="text-xs bg-red-900 px-1 rounded">🔥 {combatState.effects.playerBurnStacks}</span>}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* VS & STAT COMPARISON */}
+                        <div className="flex flex-col items-center justify-center min-w-[150px]">
+                          <div className="text-3xl font-bold text-red-500 italic mb-4">VS</div>
+                          
+                          {/* Stats Grid */}
+                          <div className="bg-black/40 p-3 rounded-lg text-xs space-y-2 w-full">
+                            <div className="flex justify-between items-center text-slate-400 border-b border-slate-700 pb-1 mb-1">
+                              <span>YOU</span> <span>STATS</span> <span>FOE</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-red-400">{heroStats.attack}</span> 
+                                <Swords className="w-3 h-3 text-slate-600"/> 
+                                <span className="text-red-400">{combatState.enemyStats.attack}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-blue-400">{heroStats.defense}</span> 
+                                <Shield className="w-3 h-3 text-slate-600"/> 
+                                <span className="text-blue-400">{combatState.enemyStats.defense}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-yellow-400">{heroStats.speed}</span> 
+                                <Zap className="w-3 h-3 text-slate-600"/> 
+                                <span className="text-yellow-400">{combatState.enemyStats.speed}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ENEMY */}
+                        <div className="flex-1 w-full relative">
+                          <div className={`p-4 rounded-lg border-2 ${RARITY_COLORS[combatState.enemyRace.rarity]} bg-slate-900/50 text-center transition-all ${combatState.enemyCurrentHp < combatState.enemyMaxHp && !combatState.isFinished ? 'animate-pulse bg-red-900/20' : ''}`}>
+                            <h3 className="font-bold text-xl mb-1">{combatState.enemyRace.name}</h3>
+                            <div className="text-xs uppercase text-slate-400 mb-2">Lvl {combatState.enemyLevel} {combatState.enemyRace.rarity}</div>
+                            
+                            {/* HP Bar */}
+                            <div className="h-4 bg-slate-800 rounded-full overflow-hidden mb-2 border border-slate-700">
+                                <div 
+                                  className="h-full bg-red-500 transition-all duration-500"
+                                  style={{ width: `${Math.max(0, (combatState.enemyCurrentHp / combatState.enemyMaxHp) * 100)}%` }}
+                                />
+                            </div>
+                            <div className="text-sm font-mono">{combatState.enemyCurrentHp} / {combatState.enemyMaxHp} HP</div>
+
+                            {/* Status Icons */}
+                            <div className="flex justify-center gap-1 mt-2">
+                              {combatState.effects.enemyBurnStacks > 0 && <span title="Burned" className="text-xs bg-red-900 px-1 rounded">🔥 {combatState.effects.enemyBurnStacks}</span>}
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* Combat Log */}
+                      <div 
+                        ref={logContainerRef}
+                        className="bg-black/50 rounded-lg p-4 h-48 overflow-y-auto font-mono text-sm space-y-1 border border-slate-800 scroll-smooth"
+                      >
+                        {combatState.log.map((entry, i) => (
+                          <div key={i} className={`
+                            ${entry.includes('Victory') ? 'text-green-400 font-bold text-lg' : ''}
+                            ${entry.includes('defeated') ? 'text-red-400 font-bold text-lg' : ''}
+                            ${entry.includes('hit') ? 'text-slate-200' : 'text-slate-500'}
+                            ${entry.includes('Loot') ? 'text-amber-300' : ''}
+                            ${entry.includes('crit') || entry.includes('CRIT') || entry.includes('Critical') ? 'text-yellow-400 font-bold' : ''}
+                            ${entry.includes('burn') || entry.includes('fire') || entry.includes('Hellfire') ? 'text-orange-400' : ''}
+                            ${entry.includes('heal') || entry.includes('regenerated') || entry.includes('absorbed') ? 'text-green-300' : ''}
+                          `}>
+                            <span className="opacity-50 mr-2">[{i}]</span> {entry}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Action Buttons */}
+                      {combatState.isFinished && (
+                        <div className="mt-4 flex justify-center">
+                          <button 
+                            onClick={leaveCombat}
+                            className="bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition-all"
+                          >
+                            Return to Camp
+                          </button>
+                        </div>
+                      )}
+
+                    </div>
+                  ) : (
+                    // Idle State
+                    <div className="flex flex-col items-center justify-center min-h-[300px] text-center space-y-6">
+                      <div className="bg-red-900/20 p-6 rounded-full">
+                        <Swords className="w-16 h-16 text-red-500" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-slate-200">Arena Battle</h3>
+                        <p className="text-slate-400 max-w-md mx-auto mt-2">
+                          Challenge a random opponent from the multiverse. Enemies will scale to your level.
+                        </p>
+                      </div>
+                      
+                      <button 
+                        onClick={initializeCombat}
+                        className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-red-600 font-pj rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 hover:bg-red-500"
+                      >
+                        Find Match
+                        <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
+                  )}
+              </div>
+
+              {/* Active Mission (Simplified if in combat, or just below) */}
+              {!combatState && (
+                <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700 shadow-xl">
+                  <h3 className="text-xl font-bold text-slate-200 mb-4 flex items-center gap-2">
+                    <Scroll className="text-amber-500" /> Active Mission
+                  </h3>
+                  {activeMission ? (
+                    <div className="flex flex-col h-full justify-center gap-4">
+                      <div className="text-lg font-bold text-amber-200 text-center">
+                        {MISSIONS.find(m => m.id === activeMission)?.name}
+                      </div>
+                      <div className="w-full bg-slate-800 rounded-full h-4 overflow-hidden">
+                        <div 
+                          className="bg-amber-500 h-full transition-all duration-100"
+                          style={{ width: `${missionProgress}%` }}
+                        />
+                      </div>
+                      <p className="text-center text-xs text-slate-500">
+                          Completing... {heroStats.speed > 0 && <span className="text-yellow-400">(Speed Bonus: {Math.floor(heroStats.speed)}%)</span>}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-24 text-slate-500 italic border-2 border-dashed border-slate-800 rounded-lg">
+                      No active mission running.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Mission List */}
+              {!combatState && (
+                <div>
+                  <h3 className="text-lg font-bold text-slate-400 mb-4">Available Missions</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {MISSIONS.map(mission => (
+                      <button
+                        key={mission.id}
+                        onClick={() => startMission(mission)}
+                        disabled={!!activeMission}
+                        className={`
+                          flex justify-between items-center p-4 rounded-lg border text-left transition-all
+                          ${!!activeMission ? 'opacity-50 cursor-not-allowed bg-slate-900 border-slate-800' : 'bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-amber-500/50'}
+                        `}
+                      >
+                        <div>
+                          <div className="font-bold text-slate-200">{mission.name}</div>
+                          <div className="text-xs text-slate-400">{mission.description}</div>
+                          {mission.minRarity && (
+                            <div className="text-[10px] mt-1 text-red-400 uppercase">Requires: {mission.minRarity}</div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-1 font-bold text-purple-400">
+                            <Gem className="w-3 h-3" /> {mission.reward}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-green-400 justify-end mt-1">
+                            +{mission.xpReward} XP
+                          </div>
+                          <div className="text-xs text-slate-500 mt-1">{mission.duration / 1000}s</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* --- TAB: COLLECTION --- */}
+          {activeTab === 'collection' && (
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-8">
+                <h2 className="text-3xl fantasy-font text-indigo-400">Race Collection</h2>
+                <div className="text-slate-400">
+                  Owned: <span className="text-white font-bold">{ownedRaceIds.size}</span> / {races.length}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {races.map((race) => (
+                  <RaceCard 
+                    key={race.id} 
+                    race={race} 
+                    isOwned={ownedRaceIds.has(race.id)}
+                    isEquipped={equippedRace.id === race.id}
+                    onEquip={handleEquipRace}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* --- TAB: CODES --- */}
+          {activeTab === 'codes' && (
+            <div className="max-w-2xl mx-auto flex flex-col items-center justify-center h-full min-h-[60vh]">
+              <div className="w-full bg-slate-900/90 p-10 rounded-2xl border border-emerald-900/50 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent"></div>
+                
+                <h2 className="text-3xl fantasy-font text-emerald-400 mb-2 text-center flex items-center justify-center gap-2">
+                  <KeyRound /> Secret Codes
+                </h2>
+                <p className="text-slate-400 text-center mb-8">
+                  Whisper the ancient words to the forge to receive its blessings.
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-300 mb-2">Enter Code</label>
+                    <input 
+                      type="text" 
+                      value={codeScan}
+                      onChange={(e) => setCodeScan(e.target.value)}
+                      placeholder="e.g. WELCOME"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-white text-center tracking-widest uppercase font-mono focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-slate-700"
+                    />
+                  </div>
+
+                  <button 
+                    onClick={handleRedeemCode}
+                    disabled={!codeScan.trim()}
+                    className={`
+                      w-full py-4 rounded-lg font-bold text-lg uppercase tracking-widest transition-all
+                      flex items-center justify-center gap-2
+                      bg-emerald-700 hover:bg-emerald-600 text-white shadow-lg hover:shadow-emerald-500/20
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
+                  >
+                    Redeem
+                  </button>
+                </div>
+
+                <div className="mt-8">
+                  <h4 className="text-xs uppercase font-bold text-slate-500 mb-2 text-center">Hints</h4>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <span className="text-xs bg-black/20 px-2 py-1 rounded text-slate-600">Start</span>
+                    <span className="text-xs bg-black/20 px-2 py-1 rounded text-slate-600">The Forge</span>
+                    <span className="text-xs bg-black/20 px-2 py-1 rounded text-slate-600">Legend</span>
+                    <span className="text-xs bg-black/20 px-2 py-1 rounded text-slate-600">Ultimate</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- TAB: STATS --- */}
+          {activeTab === 'stats' && (
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-3xl fantasy-font text-emerald-400 mb-8 border-b border-slate-800 pb-4">Forge Statistics</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700">
+                  <h3 className="text-lg font-bold text-slate-400 mb-2">Total Rolls Session</h3>
+                  <p className="text-4xl font-bold text-white">{rollHistory.length}</p>
+                </div>
+                <div className="bg-slate-900/80 p-6 rounded-xl border border-slate-700">
+                  <h3 className="text-lg font-bold text-slate-400 mb-2">Highest Rarity Owned</h3>
+                  <p className="text-2xl font-bold text-amber-400">
+                    {Array.from(ownedRaceIds).map(id => races.find(r => r.id === id)).reduce((prev, current) => {
+                        const pRank = RARITY_POWER[prev?.rarity || Rarity.COMMON];
+                        const cRank = RARITY_POWER[current?.rarity || Rarity.COMMON];
+                        return cRank > pRank ? current : prev;
+                    }, INITIAL_RACES[0])?.rarity}
+                  </p>
+                </div>
+              </div>
+
+              <StatsChart races={races} />
+
+              <div className="mt-8">
+                <h3 className="text-xl font-bold mb-4">Roll History</h3>
+                <div className="bg-slate-900/50 rounded-lg overflow-hidden border border-slate-800">
+                  {rollHistory.map((race, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-3 border-b border-slate-800 last:border-0 hover:bg-slate-800/50">
+                      <span className={`font-bold ${
+                        race.rarity === Rarity.MYTHICAL ? 'text-rose-500' : 
+                        race.rarity === Rarity.LEGENDARY ? 'text-amber-400' : 'text-slate-300'
+                      }`}>{race.name}</span>
+                      <span className="text-xs uppercase px-2 py-1 rounded bg-slate-950 text-slate-500">{race.rarity}</span>
+                    </div>
+                  ))}
+                  {rollHistory.length === 0 && <div className="p-4 text-center text-slate-500">No history available</div>}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </main>
+      </div>
 
       <style>{`
         .nav-btn {
