@@ -91,6 +91,26 @@ export interface CombatState {
   }[];
 }
 
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface MysteryPackage {
+  id: string;
+  name: string;
+  cost: number;
+  description: string;
+  guaranteedRarity?: Rarity; // Minimum rarity
+  dropRates: Record<Rarity, number>; // Percentage chance (0-100) for each rarity
+}
+
+export interface TutorialStep {
+  id: number;
+  text: string;
+  trigger: 'movement' | 'open_forge' | 'open_adventure' | 'open_shop' | 'complete' | 'click_next';
+}
+
 export const RARITY_POWER: Record<Rarity, number> = {
   [Rarity.COMMON]: 10,
   [Rarity.UNCOMMON]: 25,

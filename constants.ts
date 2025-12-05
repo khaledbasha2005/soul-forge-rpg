@@ -1,4 +1,4 @@
-import { Race, Rarity, Mission, Item } from './types';
+import { Race, Rarity, Mission, Item, MysteryPackage, TutorialStep } from './types';
 
 export const INITIAL_RACES: Race[] = [
   {
@@ -235,6 +235,61 @@ export const REDEEM_CODES: Record<string, number> = {
 
 export const ROLL_COST = 100;
 export const SHOP_REFRESH_COST = 50;
+
+export const TUTORIAL_STEPS: TutorialStep[] = [
+  { id: 0, text: "Welcome to Soul Forge! Use WASD or Arrow Keys to move your character around the map.", trigger: 'movement' },
+  { id: 1, text: "Visit the Blacksmith (Hammer Icon) to the North to Forge a new Race.", trigger: 'open_forge' },
+  { id: 2, text: "Great! Now visit the Quest Board (Scroll Icon) to the West to start an adventure.", trigger: 'open_adventure' },
+  { id: 3, text: "Visit the Shop (Tent Icon) to the East to buy equipment or Mystery Packages.", trigger: 'open_shop' },
+  { id: 4, text: "Beware the dark grass! Walking there triggers battles. Here is a Starter Pack to help you survive!", trigger: 'complete' },
+];
+
+export const MYSTERY_PACKAGES: MysteryPackage[] = [
+  {
+    id: 'pkg_novice',
+    name: "Novice Supply Crate",
+    cost: 200,
+    description: "A dusty crate. Mostly contains basic gear, but might surprise you.",
+    dropRates: {
+      [Rarity.COMMON]: 70,
+      [Rarity.UNCOMMON]: 25,
+      [Rarity.RARE]: 5,
+      [Rarity.EPIC]: 0,
+      [Rarity.LEGENDARY]: 0,
+      [Rarity.MYTHICAL]: 0
+    }
+  },
+  {
+    id: 'pkg_elite',
+    name: "Elite Reinforcements",
+    cost: 1000,
+    description: "Standard issue for veteran soldiers. Good chance for Rare items.",
+    guaranteedRarity: Rarity.UNCOMMON,
+    dropRates: {
+      [Rarity.COMMON]: 10,
+      [Rarity.UNCOMMON]: 50,
+      [Rarity.RARE]: 30,
+      [Rarity.EPIC]: 10,
+      [Rarity.LEGENDARY]: 0,
+      [Rarity.MYTHICAL]: 0
+    }
+  },
+  {
+    id: 'pkg_celestial',
+    name: "Celestial Vault",
+    cost: 5000,
+    description: "Radiates immense power. Contains high-tier equipment.",
+    guaranteedRarity: Rarity.RARE,
+    dropRates: {
+      [Rarity.COMMON]: 0,
+      [Rarity.UNCOMMON]: 0,
+      [Rarity.RARE]: 40,
+      [Rarity.EPIC]: 40,
+      [Rarity.LEGENDARY]: 18,
+      [Rarity.MYTHICAL]: 2
+    }
+  }
+];
 
 export const ITEMS_POOL: Item[] = [
   // Weapons
